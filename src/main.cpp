@@ -3,13 +3,15 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
+#include "server.hpp"
+#include "ESP8266_utils.hpp"
+#include "Moisture.cpp"
+
 const int SENSOR_PIN = A0; 
 
 #define OLED_SDA   4
 #define OLED_SCL   5
 
-const int DRY_VALUE = 800;
-const int WET_VALUE = 315;
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 
@@ -20,6 +22,10 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 void setup() {
   Serial.begin(111520);
+
+  ConnectWiFi_STA();
+ 
+  InitServer();
 
   Wire.begin(OLED_SDA, OLED_SCL);
 
@@ -33,11 +39,8 @@ void setup() {
 }
 
 void loop() {
-  int rawValue = analogRead(SENSOR_PIN); 
 
-  int moisturePercentage = map(rawValue, DRY_VALUE, WET_VALUE, 0, 100);
-
-  moisturePercentage = constrain(moisturePercentage, 0, 100);
+  moisture.update(analogRead(SENSOR_PIN));
 
   display.clearDisplay();
 
@@ -48,12 +51,14 @@ void loop() {
   display.setTextSize(3);
   display.setCursor(0, 20);
   
-  display.print(moisturePercentage);
+  display.print(moisture.getPercentage());
   
   display.setTextSize(2);
   display.print("%"); 
 
   display.display(); 
+
+  server.handleClient();
   
-  delay(1000); 
+  delay(500); 
 }
